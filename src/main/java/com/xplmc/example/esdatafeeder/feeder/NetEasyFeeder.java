@@ -34,6 +34,16 @@ public class NetEasyFeeder {
     private static final String INDEX_NAME = "net_easy";
     private static final String TYPE_NAME = "user_pwd";
 
+    /**
+     * bulk commit size
+     */
+    private static final int BULK_SIZE = 5000;
+
+    /**
+     * NetEasy feeder code version
+     */
+    private static final String CODE_VERSION = "20180712 v1, bulk size: " + BULK_SIZE;
+
     @Value("${feeder.root-file-path}")
     private String rootFilePath = null;
 
@@ -90,6 +100,8 @@ public class NetEasyFeeder {
             return;
         }
 
+        //start time
+        long start = System.currentTimeMillis();
         //begin feeding
         Long count = doRealFeed(file);
 
@@ -101,6 +113,8 @@ public class NetEasyFeeder {
             netEasyFeedRecord.setFileHash(sha1sum);
             netEasyFeedRecord.setFileName(file.toString());
             netEasyFeedRecord.setRecordCount(count);
+            netEasyFeedRecord.setCodeVersion(CODE_VERSION);
+            netEasyFeedRecord.setCostTime(System.currentTimeMillis() - start);
             netEasyFeedRecordRepository.save(netEasyFeedRecord);
         }
 
@@ -113,12 +127,8 @@ public class NetEasyFeeder {
      * @return record count that's successfully fed，null when something bad happened
      */
     private Long doRealFeed(Path file) {
-
         //keep count
         long count = 0;
-
-        //bulk size
-        int bulkSize = 1000;
 
         //temp array list for bulk operation
         List<Map<String, String>> tempList = new ArrayList<>();
@@ -127,7 +137,6 @@ public class NetEasyFeeder {
 
             String line;
             while ((line = br.readLine()) != null) {
-                count++;
                 try {
                     //split by ----
                     String[] userPwdArray = line.split(USER_PWD_DELIMITER);
@@ -137,14 +146,15 @@ public class NetEasyFeeder {
                         logger.info("wrong format, line: {}, content: {}, will ignore", count, line);
                     } else {
                         //index operation
-                        Map<String, String> userPwdMap = new HashMap<>(bulkSize * 2);
+                        Map<String, String> userPwdMap = new HashMap<>(BULK_SIZE * 2);
                         userPwdMap.put("username", userPwdArray[0]);
                         userPwdMap.put("password", userPwdArray[1]);
                         tempList.add(userPwdMap);
+                        count++;
                     }
 
                     //commit
-                    if (tempList.size() >= bulkSize) {
+                    if (tempList.size() >= BULK_SIZE) {
                         BulkRequestBuilder bulkRequestBuilder = client.prepareBulk();
 
                         //add bulk request
@@ -159,7 +169,7 @@ public class NetEasyFeeder {
                         if (bulkResponse.hasFailures()) {
                             logger.error("bulk has failures, ignore");
                         } else {
-                            logger.info("bulk success, size: {}, current count: {}", bulkSize, count);
+                            logger.info("bulk success, size: {}, current count: {}", BULK_SIZE, count);
                         }
                     }
                 } catch (Exception ie) {

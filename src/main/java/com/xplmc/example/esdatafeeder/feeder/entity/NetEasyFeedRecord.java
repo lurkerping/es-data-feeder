@@ -48,4 +48,14 @@ public class NetEasyFeedRecord extends BaseEntity implements Serializable {
     @NonNull
     private Long recordCount;
 
+    /**
+     * NetEasy feeder code version
+     */
+    private String codeVersion;
+
+    /**
+     * NetEasy feed file cost
+     */
+    private Long costTime;
+
 }
