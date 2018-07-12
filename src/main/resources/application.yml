@@ -1,0 +1,43 @@
+spring:
+  application:
+    name: es-data-feeder
+  profiles:
+    active: dev
+
+# jpa and datasource configuration
+spring:
+  jpa:
+    hibernate:
+      ddl-auto: update
+    open-in-view: false
+    database: MYSQL
+    show-sql: false
+    generate-ddl: true
+  datasource:
+    url: jdbc:mysql://localhost:3306/leaked_user?useSSL=false&useUnicode=true&characterEncoding=UTF-8
+    username: luke
+    password: 123456
+
+feeder:
+  root-file-path: J:\baidu
+elasticsearch:
+  cluster-name: xiaofamily
+  cluster-nodes: 192.168.3.8:9300,192.168.3.10:9300
+
+# debug sql mode
+---
+spring:
+  profiles: dev_debug_sql
+  jpa:
+    show-sql: true
+logging:
+  level:
+    org.hibernate.SQL: debug
+    org.hibernate.type.descriptor.sql: trace
+
+# develop on desk top mode
+---
+spring:
+  profiles: dev_desk
+  datasource:
+    url: jdbc:mysql://192.168.3.8:3306/leaked_user?useSSL=false&useUnicode=true&characterEncoding=UTF-8

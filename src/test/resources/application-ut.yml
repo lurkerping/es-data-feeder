@@ -1,0 +1,23 @@
+spring:
+  application:
+    name: es-data-feeder
+logging:
+  level:
+    REQUEST_RESPONSE: INFO
+feeder:
+  root-file-path: J:\baidu
+elasticsearch:
+  cluster-name: xiaofamily
+  cluster-nodes: 192.168.3.8:9300,192.168.3.10:9300
+
+# jpa and datasource configuration
+spring:
+  jpa:
+    hibernate:
+      ddl-auto: update
+    open-in-view: false
+    database: H2
+    show_sql: true
+    generate-ddl: true
+  datasource:
+      url: jdbc:h2:mem:testdb;DB_CLOSE_ON_EXIT=TRUE
