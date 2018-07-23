@@ -63,13 +63,13 @@ public class NetEasyFeeder {
     public void feed() throws IOException {
 
         Path path = Paths.get(rootFilePath);
-        //walk the directory tree, feed any txt/TXT file
+        // walk the directory tree, feed any txt/TXT file
         Files.walkFileTree(path, new SimpleFileVisitor<Path>() {
             @Override
             public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
                 if (file.toString().endsWith(TXT_SUFFIX_LOWER_CASE) || file.toString().endsWith(TXT_SUFFIX_UPPER_CASE)) {
                     logger.info("txt file, begin feed, file name: {}", file.getFileName());
-                    //feed a single file
+                    // feed a single file
                     doFeed(file);
                 } else {
                     logger.info("not a txt file, ignore, file name: {}", file.getFileName());
@@ -87,28 +87,28 @@ public class NetEasyFeeder {
      * @param file file path
      */
     private void doFeed(Path file) {
-        //calculate the file's SHA1 checksum
+        // calculate the file's SHA1 checksum
         String sha1sum = SimpleHashCalcUtils.sha1sum(file.toFile());
         if (sha1sum == null) {
             logger.warn("error when calculating file's hash, ignore, fileName: " + file);
             return;
         }
-        //check if the file is already fed
+        // check if the file is already fed
         Iterable<NetEasyFeedRecord> netEasyFeedRecordIterable = netEasyFeedRecordRepository.findByFileHash(sha1sum);
         if (netEasyFeedRecordIterable.iterator().hasNext()) {
             logger.info("file is already fed，ignore, fileName: " + file);
             return;
         }
 
-        //start time
+        // start time
         long start = System.currentTimeMillis();
-        //begin feeding
+        // begin feeding
         Long count = doRealFeed(file);
 
         if (count == null) {
             logger.info("fed failed, fileName: " + file);
         } else {
-            //fed finished, insert a NetEasyFeedRecord
+            // fed finished, insert a NetEasyFeedRecord
             NetEasyFeedRecord netEasyFeedRecord = new NetEasyFeedRecord();
             netEasyFeedRecord.setFileHash(sha1sum);
             netEasyFeedRecord.setFileName(file.toString());
@@ -127,10 +127,10 @@ public class NetEasyFeeder {
      * @return record count that's successfully fed，null when something bad happened
      */
     private Long doRealFeed(Path file) {
-        //keep count
+        // keep count
         long count = 0;
 
-        //temp array list for bulk operation
+        // temp array list for bulk operation
         List<Map<String, String>> tempList = new ArrayList<>();
 
         try (BufferedReader br = new BufferedReader(new FileReader(file.toFile()))) {
@@ -138,14 +138,14 @@ public class NetEasyFeeder {
             String line;
             while ((line = br.readLine()) != null) {
                 try {
-                    //split by ----
+                    // split by ----
                     String[] userPwdArray = line.split(USER_PWD_DELIMITER);
 
-                    //check line format
+                    // check line format
                     if (userPwdArray.length != 2) {
                         logger.info("wrong format, line: {}, content: {}, will ignore", count, line);
                     } else {
-                        //index operation
+                        // index operation
                         Map<String, String> userPwdMap = new HashMap<>(BULK_SIZE * 2);
                         userPwdMap.put("username", userPwdArray[0]);
                         userPwdMap.put("password", userPwdArray[1]);
@@ -153,18 +153,18 @@ public class NetEasyFeeder {
                         count++;
                     }
 
-                    //commit
+                    // commit
                     if (tempList.size() >= BULK_SIZE) {
                         BulkRequestBuilder bulkRequestBuilder = client.prepareBulk();
 
-                        //add bulk request
+                        // add bulk request
                         Iterator<Map<String, String>> userPwdIterator = tempList.iterator();
                         while (userPwdIterator.hasNext()) {
                             bulkRequestBuilder.add(client.prepareIndex(INDEX_NAME, TYPE_NAME).setSource(userPwdIterator.next()));
                             userPwdIterator.remove();
                         }
 
-                        //print bulk result
+                        // print bulk result
                         BulkResponse bulkResponse = bulkRequestBuilder.get();
                         if (bulkResponse.hasFailures()) {
                             logger.error("bulk has failures, ignore");

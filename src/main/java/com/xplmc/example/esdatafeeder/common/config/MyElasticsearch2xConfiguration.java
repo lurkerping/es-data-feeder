@@ -35,15 +35,15 @@ public class MyElasticsearch2xConfiguration {
 
     @Bean
     public TransportClient transportClient() throws UnknownHostException {
-        //elasticsearch cluster info
+        // elasticsearch cluster info
         Settings settings = Settings.settingsBuilder()
                 .put("client.transport.sniff", true)
                 .put("cluster.name", properties.getClusterName()).build();
 
-        //build a TransportClient
+        // build a TransportClient
         TransportClient client = TransportClient.builder().settings(settings).build();
 
-        //add cluster nodes
+        // add cluster nodes
         Assert.hasText(properties.getClusterNodes(), "[Assertion failed]elasticsearch.cluster-nodes not configured");
         for (String clusterNode : StringUtils.split(properties.getClusterNodes(), COMMA)) {
             String hostname = StringUtils.substringBefore(clusterNode, COLON);
